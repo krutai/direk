@@ -482,69 +482,7 @@
     }
 
     /* ===== FOOTER / SETUP ===== */
-    footer {
-      border-top: 1px solid var(--line-strong);
-      padding-top: 28px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
-    }
-
-    @media (min-width: 780px) {
-      footer { grid-template-columns: 1fr 1fr; }
-    }
-
-    footer p, footer li {
-      font-size: 12px;
-      color: var(--cream-dim);
-      line-height: 1.7;
-    }
-
-    footer h3 {
-      font-family: var(--font-display);
-      font-size: 14px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      color: var(--cream);
-      font-weight: 400;
-    }
-
-    footer code {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      background: var(--bg-raised);
-      padding: 1px 6px;
-      color: var(--amber);
-      border: 1px solid var(--line);
-    }
-
-    footer ol { padding-left: 18px; }
-    footer ol li { margin-bottom: 4px; }
-
-    .setup-warning {
-      display: none;
-      background: var(--bg-raised);
-      border: 1px solid var(--red);
-      border-left: 4px solid var(--red);
-      padding: 18px 22px;
-      margin-bottom: 30px;
-      border-radius: 2px;
-    }
-
-    .setup-warning.show { display: block; }
-
-    .setup-warning h4 {
-      font-family: var(--font-display);
-      font-size: 16px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--red);
-      margin-bottom: 8px;
-      font-weight: 400;
-    }
-
-    .setup-warning p { font-size: 13px; color: var(--cream-dim); }
+    /* removed */
 
     /* count-up animation helper */
     .bump {
@@ -566,6 +504,182 @@
       opacity: 0.12;
       pointer-events: none;
     }
+
+    /* ===== LOCK BUTTON ===== */
+    .lock-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      color: var(--cream-dim);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .lock-btn:hover {
+      color: var(--cream);
+      border-color: var(--cream-faint);
+    }
+    body.is-owner .lock-btn {
+      color: var(--amber);
+      border-color: var(--amber);
+    }
+    body.is-owner .lock-btn svg path {
+      transform: translateY(-1px);
+    }
+
+    /* ===== VISITOR MODE — hide owner-only elements ===== */
+    body:not(.is-owner) .session-box,
+    body:not(.is-owner) .action-zone {
+      display: none !important;
+    }
+    /* hero becomes single column for visitors */
+    body:not(.is-owner) .hero {
+      grid-template-columns: 1fr !important;
+    }
+    /* tighter bottom margin since action-zone is gone */
+    body:not(.is-owner) .hero {
+      margin-bottom: 64px;
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 16, 12, 0.78);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal {
+      background: var(--bg-raised);
+      border: 1px solid var(--line-strong);
+      padding: 32px 32px 28px;
+      max-width: 380px;
+      width: 100%;
+      position: relative;
+      transform: translateY(8px);
+      transition: transform 0.22s ease;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 20px; height: 20px;
+      border-top: 2px solid var(--amber);
+      border-left: 2px solid var(--amber);
+    }
+    .modal::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; right: -1px;
+      width: 20px; height: 20px;
+      border-bottom: 2px solid var(--amber);
+      border-right: 2px solid var(--amber);
+    }
+    .modal-close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--cream-dim);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+    .modal-close:hover { color: var(--cream); }
+    .modal-eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 14px;
+    }
+    .modal h3 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .modal-sub {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 14px;
+      color: var(--cream-dim);
+      margin-bottom: 20px;
+    }
+    .modal input[type="password"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--line-strong);
+      color: var(--cream);
+      font-family: var(--font-mono);
+      font-size: 15px;
+      padding: 14px 16px;
+      letter-spacing: 0.3em;
+      border-radius: 2px;
+      outline: none;
+      margin-bottom: 16px;
+      transition: border-color 0.15s;
+    }
+    .modal input[type="password"]:focus {
+      border-color: var(--amber);
+    }
+    .modal-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn-primary {
+      background: var(--amber);
+      color: var(--bg);
+      border: none;
+      padding: 14px 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #ffc94d; }
+    .modal-err {
+      color: var(--red);
+      font-size: 12px;
+      margin-top: 14px;
+      min-height: 18px;
+      font-family: var(--font-mono);
+    }
+    .shake { animation: shake 0.4s; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
   </style>
 </head>
 <body>
@@ -581,17 +695,19 @@
       </div>
       <div class="meta">
         <span id="live-date">—</span>
+        <button class="lock-btn" id="lock-btn" aria-label="Yönetici girişi" title="Yönetici girişi">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="2.5" y="6" width="9" height="6.5" rx="0.5" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            <path d="M 4.5 6 V 4 a 2.5 2.5 0 0 1 5 0 V 6" stroke="currentColor" stroke-width="1.2" fill="none"/>
+          </svg>
+          <span id="lock-text">Kilit</span>
+        </button>
         <span class="sync-pill" id="sync-pill">
           <span class="sync-dot"></span>
           <span id="sync-text">Bağlanıyor</span>
         </span>
       </div>
     </header>
-
-    <div class="setup-warning" id="setup-warning">
-      <h4>Supabase ayarlanmadı</h4>
-      <p>Dosyanın en altındaki <code>SUPABASE_URL</code> ve <code>SUPABASE_ANON_KEY</code> değerlerini kendi Supabase projenle değiştir. O zamana kadar sayaç sadece bu cihazda çalışır.</p>
-    </div>
 
     <section class="hero">
       <div style="position: relative;">
@@ -671,41 +787,22 @@
       </div>
     </div>
 
-    <footer>
-      <div>
-        <h3>Kurulum</h3>
-        <ol>
-          <li><a href="https://supabase.com" target="_blank" style="color: var(--amber);">supabase.com</a> üzerinde ücretsiz proje aç.</li>
-          <li>SQL editörüne git, sağdaki SQL'i yapıştır ve çalıştır.</li>
-          <li>Project Settings → API bölümünden <code>URL</code> ve <code>anon public</code> anahtarını kopyala.</li>
-          <li>Bu dosyanın en altındaki <code>CONFIG</code> bloğuna yapıştır.</li>
-          <li>Dosyayı Netlify, Vercel, GitHub Pages gibi bir yere yükle.</li>
-        </ol>
+  </div>
+
+  <!-- ===== LOCK MODAL ===== -->
+  <div class="modal-overlay" id="modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="modal-title">
+      <button class="modal-close" id="modal-close" aria-label="Kapat">×</button>
+      <div class="modal-eyebrow">● Yönetici</div>
+      <h3 id="modal-title">Şifre gerekli</h3>
+      <p class="modal-sub">Sayacı sadece sahibi artırabilir. Şifreyi gir.</p>
+      <input type="password" id="pwd-input" placeholder="Şifre" autocomplete="off" spellcheck="false">
+      <div class="modal-row">
+        <button class="btn-secondary" id="pwd-cancel">İptal</button>
+        <button class="btn-primary" id="pwd-submit">Aç</button>
       </div>
-      <div>
-        <h3>Tablo şeması</h3>
-        <pre style="font-family: var(--font-mono); font-size: 10.5px; background: var(--bg-raised); padding: 14px; border: 1px solid var(--line); color: var(--cream-dim); overflow-x: auto; line-height: 1.5; white-space: pre;">create table direkmatik_hits (
-  id bigserial primary key,
-  user_key text not null,
-  hit_at timestamptz not null default now()
-);
-create index on direkmatik_hits (user_key, hit_at desc);
-
-alter table direkmatik_hits
-  enable row level security;
-
-create policy "anyone read own"
-  on direkmatik_hits for select
-  using (true);
-create policy "anyone insert"
-  on direkmatik_hits for insert
-  with check (true);
-create policy "anyone delete own"
-  on direkmatik_hits for delete
-  using (true);</pre>
-      </div>
-    </footer>
-
+      <p class="modal-err" id="pwd-err"></p>
+    </div>
   </div>
 
   <!-- ===== SCRIPT ===== -->
@@ -717,6 +814,17 @@ create policy "anyone delete own"
        ========================================================= */
     const SUPABASE_URL = 'https://dxzjgnwrkeyhxjahoszj.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_3I2C3tzX-fDUZzsVriNlTQ_NVY5yJXe';
+
+    /* ŞİFRE — varsayılan: "direkkral"
+       Değiştirmek için: yeni şifrenin SHA-256 hash'ini hesapla, aşağıya yapıştır.
+       Konsola şunu yapıştırarak hash'i alabilirsin (yeni şifren "abc" ise):
+       crypto.subtle.digest('SHA-256', new TextEncoder().encode('abc'))
+         .then(b => console.log(Array.from(new Uint8Array(b))
+         .map(x=>x.toString(16).padStart(2,'0')).join(''))) */
+    const OWNER_PASSWORD_HASH = 'e0ea935484ef3571ee98961f76772c450f74bf97f0fec79c8803ac7d8f060cfb';
+
+    /* TÜM ZİYARETÇİLER bu user_key'in verisini görür */
+    const SHARED_USER_KEY = 'main';
     /* ========================================================= */
 
     // ---- state ----
@@ -739,7 +847,6 @@ create policy "anyone delete own"
     const syncPill = $('sync-pill');
     const syncText = $('sync-text');
     const ticker = $('ticker');
-    const setupWarning = $('setup-warning');
     const liveDate = $('live-date');
 
     // live date in header
@@ -747,14 +854,30 @@ create policy "anyone delete own"
       day: '2-digit', month: 'short', year: 'numeric'
     }).toUpperCase();
 
-    // ---- user identity ----
+    // ---- user identity (shared across all visitors) ----
     function getUserKey() {
-      let k = localStorage.getItem('direkmatik_user_key');
-      if (!k) {
-        k = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-        localStorage.setItem('direkmatik_user_key', k);
-      }
-      return k;
+      return SHARED_USER_KEY;
+    }
+
+    // ---- owner mode ----
+    function isOwner() {
+      return localStorage.getItem('direkmatik_owner') === '1';
+    }
+    function setOwner(on) {
+      if (on) localStorage.setItem('direkmatik_owner', '1');
+      else localStorage.removeItem('direkmatik_owner');
+      applyOwnerMode();
+    }
+    function applyOwnerMode() {
+      const on = isOwner();
+      document.body.classList.toggle('is-owner', on);
+      $('lock-text').textContent = on ? 'Açık' : 'Kilit';
+    }
+
+    async function sha256Hex(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     // ---- sync status ui ----
@@ -889,7 +1012,6 @@ create policy "anyone delete own"
 
     async function loadAll() {
       if (OFFLINE) {
-        setupWarning.classList.add('show');
         setSync('err', 'Yerel mod');
         // fallback to localStorage
         try {
@@ -1055,15 +1177,77 @@ create policy "anyone delete own"
       }
     });
 
-    // klavye kısayolu: boşluk = hit
+    // klavye kısayolu: boşluk = hit (sadece sahip için)
     document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && document.activeElement === document.body) {
+      if (e.code === 'Space' && document.activeElement === document.body && isOwner()) {
         e.preventDefault();
         hitBtn.click();
       }
+      if (e.code === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // ---- lock modal ----
+    const modal = $('modal');
+    const lockBtn = $('lock-btn');
+    const pwdInput = $('pwd-input');
+    const pwdSubmit = $('pwd-submit');
+    const pwdCancel = $('pwd-cancel');
+    const pwdErr = $('pwd-err');
+    const modalClose = $('modal-close');
+
+    function openModal() {
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      pwdErr.textContent = '';
+      pwdInput.value = '';
+      setTimeout(() => pwdInput.focus(), 50);
+    }
+    function closeModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    lockBtn.addEventListener('click', () => {
+      if (isOwner()) {
+        if (confirm('Yönetici modundan çıkılsın mı? Sayacı artık artıramazsın.')) {
+          setOwner(false);
+        }
+      } else {
+        openModal();
+      }
+    });
+
+    modalClose.addEventListener('click', closeModal);
+    pwdCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    async function tryUnlock() {
+      const pwd = pwdInput.value;
+      if (!pwd) return;
+      const hash = await sha256Hex(pwd);
+      if (hash === OWNER_PASSWORD_HASH) {
+        setOwner(true);
+        closeModal();
+      } else {
+        pwdErr.textContent = 'Yanlış şifre.';
+        modal.querySelector('.modal').classList.add('shake');
+        setTimeout(() => modal.querySelector('.modal').classList.remove('shake'), 400);
+        pwdInput.value = '';
+        pwdInput.focus();
+      }
+    }
+
+    pwdSubmit.addEventListener('click', tryUnlock);
+    pwdInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') tryUnlock();
     });
 
     // ---- init ----
+    applyOwnerMode();
     userKey = getUserKey();
     if (!OFFLINE) {
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
