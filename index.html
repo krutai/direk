@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direkmatik — FIFA Direk Sayacı</title>
+  <meta name="description" content="FIFA'da direğe vurdukça sayacı artır. Toplam cihazlar arası senkron.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0A100C;
+      --bg-raised: #121A14;
+      --bg-panel: #0F1511;
+      --line: rgba(239, 232, 209, 0.09);
+      --line-strong: rgba(239, 232, 209, 0.18);
+      --cream: #EFE8D1;
+      --cream-dim: rgba(239, 232, 209, 0.55);
+      --cream-faint: rgba(239, 232, 209, 0.32);
+      --red: #E8443B;
+      --red-deep: #B8322B;
+      --amber: #F4B942;
+      --green: #4A8F5C;
+      --green-deep: #1F3A28;
+
+      --font-display: 'Anton', 'Impact', sans-serif;
+      --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+      --font-serif: 'EB Garamond', Georgia, serif;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: var(--font-mono);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ===== AMBIENT BACKGROUND ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, var(--line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      opacity: 0.4;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(244, 185, 66, 0.06), transparent 60%),
+                  radial-gradient(ellipse at 50% 100%, rgba(74, 143, 92, 0.08), transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* grain */
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.08;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>");
+    }
+
+    /* ===== LAYOUT ===== */
+    .wrap {
+      position: relative;
+      z-index: 2;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 24px 80px;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line-strong);
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--red);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.6s ease-in-out infinite;
+      align-self: center;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 68, 59, 0.4); }
+      50% { opacity: 0.7; transform: scale(0.85); box-shadow: 0 0 0 6px rgba(232, 68, 59, 0); }
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: 22px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .meta {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--cream-dim);
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      font-size: 10px;
+    }
+
+    .sync-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--cream-faint);
+      transition: background 0.3s;
+    }
+    .sync-pill.ok .sync-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .sync-pill.err .sync-dot { background: var(--red); }
+    .sync-pill.busy .sync-dot { background: var(--amber); animation: pulse 1s infinite; }
+
+    /* ===== HERO COUNTER ===== */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+
+    @media (min-width: 780px) {
+      .hero { grid-template-columns: 2fr 1fr; align-items: end; }
+    }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.35em;
+      color: var(--cream-dim);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .eyebrow::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .total-label { color: var(--red); }
+
+    .hero-number {
+      font-family: var(--font-display);
+      font-size: clamp(180px, 30vw, 340px);
+      line-height: 0.82;
+      letter-spacing: -0.02em;
+      color: var(--cream);
+      font-variant-numeric: tabular-nums;
+      position: relative;
+    }
+
+    .hero-number .unit {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 0.14em;
+      color: var(--amber);
+      vertical-align: super;
+      letter-spacing: 0;
+      margin-left: 0.1em;
+    }
+
+    .hero-caption {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 20px;
+      color: var(--cream-dim);
+      margin-top: 18px;
+      max-width: 44ch;
+      line-height: 1.4;
+      min-height: 2.8em;
+    }
+
+    .hero-caption .author {
+      display: block;
+      font-style: normal;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--cream-faint);
+      margin-top: 10px;
+    }
+
+    .session-box {
+      background: var(--bg-raised);
+      border: 1px solid var(--line-strong);
+      padding: 22px 24px;
+      position: relative;
+    }
+
+    .session-box::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 14px; height: 14px;
+      border-top: 2px solid var(--amber);
+      border-left: 2px solid var(--amber);
+    }
+
+    .session-label {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      margin-bottom: 10px;
+    }
+
+    .session-number {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 52px;
+      color: var(--amber);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .session-sub {
+      font-size: 12px;
+      color: var(--cream-faint);
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    /* ===== ACTION ===== */
+    .action-zone {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 48px;
+    }
+
+    .hit-button {
+      position: relative;
+      width: 100%;
+      background: var(--red);
+      color: var(--cream);
+      border: none;
+      padding: 34px 28px;
+      font-family: var(--font-display);
+      font-size: clamp(32px, 6vw, 54px);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.1s ease, background 0.15s;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .hit-button:hover { background: var(--red-deep); }
+    .hit-button:active { transform: scale(0.985); }
+    .hit-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .hit-button svg {
+      width: 42px; height: 42px;
+      flex-shrink: 0;
+    }
+
+    .hit-button .crosshair {
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgba(239, 232, 209, 0.25);
+      pointer-events: none;
+    }
+
+    /* ripple effect */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(239, 232, 209, 0.35);
+      transform: scale(0);
+      animation: ripple 0.7s ease-out;
+      pointer-events: none;
+    }
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    .secondary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--line-strong);
+      color: var(--cream);
+      padding: 14px 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      border-radius: 2px;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-raised);
+      border-color: var(--cream-faint);
+    }
+
+    .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary.confirm { border-color: var(--red); color: var(--red); }
+
+    /* ===== STATS GRID ===== */
+    .stats-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stats-heading h2 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+
+    .stats-heading .small {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--line-strong);
+      border: 1px solid var(--line-strong);
+      margin-bottom: 48px;
+    }
+
+    .stat {
+      background: var(--bg);
+      padding: 22px 20px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 42px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-value.mono {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--cream-faint);
+      margin-top: 8px;
+    }
+
+    /* ===== HISTORY TICKER ===== */
+    .ticker-wrap {
+      background: var(--bg-raised);
+      border: 1px solid var(--line-strong);
+      padding: 18px 22px;
+      margin-bottom: 48px;
+    }
+
+    .ticker-label {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 12px;
+    }
+
+    .ticker {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-height: 80px;
+      overflow: hidden;
+    }
+
+    .tick {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--cream-dim);
+      white-space: nowrap;
+    }
+
+    .tick.new {
+      color: var(--amber);
+      border-color: var(--amber);
+      animation: tickIn 0.4s ease-out;
+    }
+
+    @keyframes tickIn {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .empty-ticker {
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--cream-faint);
+      font-size: 14px;
+    }
+
+    /* ===== FOOTER / SETUP ===== */
+    footer {
+      border-top: 1px solid var(--line-strong);
+      padding-top: 28px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    @media (min-width: 780px) {
+      footer { grid-template-columns: 1fr 1fr; }
+    }
+
+    footer p, footer li {
+      font-size: 12px;
+      color: var(--cream-dim);
+      line-height: 1.7;
+    }
+
+    footer h3 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      color: var(--cream);
+      font-weight: 400;
+    }
+
+    footer code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: var(--bg-raised);
+      padding: 1px 6px;
+      color: var(--amber);
+      border: 1px solid var(--line);
+    }
+
+    footer ol { padding-left: 18px; }
+    footer ol li { margin-bottom: 4px; }
+
+    .setup-warning {
+      display: none;
+      background: var(--bg-raised);
+      border: 1px solid var(--red);
+      border-left: 4px solid var(--red);
+      padding: 18px 22px;
+      margin-bottom: 30px;
+      border-radius: 2px;
+    }
+
+    .setup-warning.show { display: block; }
+
+    .setup-warning h4 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 8px;
+      font-weight: 400;
+    }
+
+    .setup-warning p { font-size: 13px; color: var(--cream-dim); }
+
+    /* count-up animation helper */
+    .bump {
+      animation: bump 0.4s cubic-bezier(.36,.07,.19,.97);
+    }
+    @keyframes bump {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.06); color: var(--amber); }
+      100% { transform: scale(1); }
+    }
+
+    /* post icon in hero */
+    .post-ornament {
+      position: absolute;
+      right: -20px;
+      top: -30px;
+      width: 120px;
+      height: 120px;
+      opacity: 0.12;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grain"></div>
+
+  <div class="wrap">
+
+    <header>
+      <div class="logo">
+        <span class="logo-dot"></span>
+        <span class="logo-text">Direkmatik</span>
+      </div>
+      <div class="meta">
+        <span id="live-date">—</span>
+        <span class="sync-pill" id="sync-pill">
+          <span class="sync-dot"></span>
+          <span id="sync-text">Bağlanıyor</span>
+        </span>
+      </div>
+    </header>
+
+    <div class="setup-warning" id="setup-warning">
+      <h4>Supabase ayarlanmadı</h4>
+      <p>Dosyanın en altındaki <code>SUPABASE_URL</code> ve <code>SUPABASE_ANON_KEY</code> değerlerini kendi Supabase projenle değiştir. O zamana kadar sayaç sadece bu cihazda çalışır.</p>
+    </div>
+
+    <section class="hero">
+      <div style="position: relative;">
+        <svg class="post-ornament" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="10" y="10" width="6" height="110" fill="currentColor"/>
+          <rect x="104" y="10" width="6" height="110" fill="currentColor"/>
+          <rect x="10" y="10" width="100" height="6" fill="currentColor"/>
+        </svg>
+        <div class="eyebrow"><span class="total-label">● Toplam skor</span></div>
+        <div class="hero-number">
+          <span id="total-out">0</span><span class="unit">direk</span>
+        </div>
+        <div class="hero-caption" id="reaction">
+          <span id="reaction-text">Henüz direğe vurmadın.</span>
+          <span class="author" id="reaction-author">— Kaleci</span>
+        </div>
+      </div>
+
+      <aside class="session-box">
+        <div class="session-label">Bu oturum</div>
+        <div class="session-number" id="session-out">0</div>
+        <div class="session-sub" id="session-sub">Site açıldığından beri</div>
+      </aside>
+    </section>
+
+    <div class="action-zone">
+      <button class="hit-button" id="hit-btn" aria-label="Direğe vurdum">
+        <div class="crosshair"></div>
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <rect x="8" y="4" width="4" height="40" fill="currentColor"/>
+          <rect x="36" y="4" width="4" height="40" fill="currentColor"/>
+          <rect x="8" y="4" width="32" height="4" fill="currentColor"/>
+          <circle cx="32" cy="28" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M 26 22 L 38 34 M 38 22 L 26 34" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span>Direğe vurdum</span>
+      </button>
+
+      <div class="secondary-row">
+        <button class="btn-secondary" id="undo-btn" disabled>← Geri al</button>
+        <button class="btn-secondary" id="reset-btn">Sıfırla</button>
+      </div>
+    </div>
+
+    <div class="stats-heading">
+      <h2>İstatistikler</h2>
+      <span class="small">Canlı · Supabase</span>
+    </div>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-label">İlk direk</div>
+        <div class="stat-value mono" id="stat-first">—</div>
+        <div class="stat-sub">Serüvenin başlangıcı</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Son direk</div>
+        <div class="stat-value mono" id="stat-last">—</div>
+        <div class="stat-sub">En taze acı</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Günlük rekor</div>
+        <div class="stat-value" id="stat-record">0</div>
+        <div class="stat-sub">Tek günde en fazla</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Günlük ort.</div>
+        <div class="stat-value" id="stat-avg">0</div>
+        <div class="stat-sub">Aktif günler üzerinden</div>
+      </div>
+    </section>
+
+    <div class="ticker-wrap">
+      <div class="ticker-label">◉ Son direkler</div>
+      <div class="ticker" id="ticker">
+        <span class="empty-ticker">Henüz kayıt yok. Butona bas, buraya düşer.</span>
+      </div>
+    </div>
+
+    <footer>
+      <div>
+        <h3>Kurulum</h3>
+        <ol>
+          <li><a href="https://supabase.com" target="_blank" style="color: var(--amber);">supabase.com</a> üzerinde ücretsiz proje aç.</li>
+          <li>SQL editörüne git, sağdaki SQL'i yapıştır ve çalıştır.</li>
+          <li>Project Settings → API bölümünden <code>URL</code> ve <code>anon public</code> anahtarını kopyala.</li>
+          <li>Bu dosyanın en altındaki <code>CONFIG</code> bloğuna yapıştır.</li>
+          <li>Dosyayı Netlify, Vercel, GitHub Pages gibi bir yere yükle.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>Tablo şeması</h3>
+        <pre style="font-family: var(--font-mono); font-size: 10.5px; background: var(--bg-raised); padding: 14px; border: 1px solid var(--line); color: var(--cream-dim); overflow-x: auto; line-height: 1.5; white-space: pre;">create table direkmatik_hits (
+  id bigserial primary key,
+  user_key text not null,
+  hit_at timestamptz not null default now()
+);
+create index on direkmatik_hits (user_key, hit_at desc);
+
+alter table direkmatik_hits
+  enable row level security;
+
+create policy "anyone read own"
+  on direkmatik_hits for select
+  using (true);
+create policy "anyone insert"
+  on direkmatik_hits for insert
+  with check (true);
+create policy "anyone delete own"
+  on direkmatik_hits for delete
+  using (true);</pre>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ===== SCRIPT ===== -->
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    /* =========================================================
+       CONFIG — burayı kendi Supabase bilgilerinle doldur
+       ========================================================= */
+    const SUPABASE_URL = 'https://qhpsirahlcfbjwsweztf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFocHNpcmFobGNmYmp3c3dlenRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MDQ5MDEsImV4cCI6MjA4OTI4MDkwMX0.DQzQowQKQppXkZHtZdhrTQwwbl7h9KLR04fuW2Qjo1w';
+    /* ========================================================= */
+
+    // ---- state ----
+    let supabase = null;
+    let userKey = null;
+    let hits = []; // array of { id, hit_at } — en yeni başta
+    let sessionCount = 0;
+    let lastDeleted = null;
+    let saveQueue = Promise.resolve();
+
+    // ---- DOM ----
+    const $ = (id) => document.getElementById(id);
+    const totalOut = $('total-out');
+    const sessionOut = $('session-out');
+    const reactionText = $('reaction-text');
+    const reactionAuthor = $('reaction-author');
+    const hitBtn = $('hit-btn');
+    const undoBtn = $('undo-btn');
+    const resetBtn = $('reset-btn');
+    const syncPill = $('sync-pill');
+    const syncText = $('sync-text');
+    const ticker = $('ticker');
+    const setupWarning = $('setup-warning');
+    const liveDate = $('live-date');
+
+    // live date in header
+    liveDate.textContent = new Date().toLocaleDateString('tr-TR', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    }).toUpperCase();
+
+    // ---- user identity ----
+    function getUserKey() {
+      let k = localStorage.getItem('direkmatik_user_key');
+      if (!k) {
+        k = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        localStorage.setItem('direkmatik_user_key', k);
+      }
+      return k;
+    }
+
+    // ---- sync status ui ----
+    function setSync(state, text) {
+      syncPill.classList.remove('ok', 'err', 'busy');
+      if (state) syncPill.classList.add(state);
+      syncText.textContent = text;
+    }
+
+    // ---- reactions (tabloid style) ----
+    const REACTIONS = [
+      { min: 0, max: 0, text: 'Henüz direğe vurmadın. Ya hep ya hiç.', author: 'Editör' },
+      { min: 1, max: 1, text: 'İlk direğin kutlu olsun. Daha çoğu yolda.', author: 'Yorum' },
+      { min: 2, max: 3, text: 'Şansın bir çırpıda döner, merak etme.', author: 'Spiker' },
+      { min: 4, max: 7, text: 'Kale senin, direk onun. Kabullen.', author: 'Kaleci' },
+      { min: 8, max: 14, text: 'Topun içgüdüsü var sanki, hep demire gidiyor.', author: 'Yorum' },
+      { min: 15, max: 24, text: 'Direk fabrikası mı işletiyorsun kardeşim?', author: 'Tribün' },
+      { min: 25, max: 39, text: 'EA Sports bunu özel olarak sana ayarlamış.', author: 'Komplocu' },
+      { min: 40, max: 69, text: 'Direk koleksiyonerliği resmen meslek oldu.', author: 'Uzman' },
+      { min: 70, max: 99, text: 'Rekorlar kitabına giriyorsun, biraz dayan.', author: 'İstatistik' },
+      { min: 100, max: 199, text: 'Üç haneye geçtin. Artık direklerin abisi sensin.', author: 'Efsane' },
+      { min: 200, max: Infinity, text: 'Sen artık FIFA değil, direk simülasyonu oynuyorsun.', author: 'Analist' }
+    ];
+
+    function pickReaction(n) {
+      return REACTIONS.find(r => n >= r.min && n <= r.max) || REACTIONS[0];
+    }
+
+    // ---- date formatting ----
+    function fmtDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }) +
+             ' ' +
+             d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function fmtDateShort(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: '2-digit' });
+    }
+
+    function fmtTime(iso) {
+      return new Date(iso).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ---- stats calculations ----
+    function computeStats() {
+      if (!hits.length) {
+        return { first: '—', last: '—', record: 0, avg: 0 };
+      }
+      const first = hits[hits.length - 1].hit_at;
+      const last = hits[0].hit_at;
+
+      // group by day
+      const byDay = {};
+      hits.forEach(h => {
+        const d = h.hit_at.slice(0, 10);
+        byDay[d] = (byDay[d] || 0) + 1;
+      });
+      const dayCounts = Object.values(byDay);
+      const record = Math.max(...dayCounts);
+      const avg = Math.round((hits.length / dayCounts.length) * 10) / 10;
+
+      return {
+        first: fmtDateShort(first),
+        last: fmtTime(last) + ' · ' + fmtDateShort(last),
+        record,
+        avg
+      };
+    }
+
+    // ---- rendering ----
+    let animatedTotal = 0;
+    function animateNumber(el, from, to, dur = 500) {
+      const start = performance.now();
+      function frame(t) {
+        const p = Math.min((t - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const val = Math.round(from + (to - from) * eased);
+        el.textContent = val;
+        if (p < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function render({ bump = false } = {}) {
+      const total = hits.length;
+
+      if (bump) {
+        totalOut.classList.remove('bump');
+        void totalOut.offsetWidth;
+        totalOut.classList.add('bump');
+        animateNumber(totalOut, animatedTotal, total, 350);
+      } else {
+        totalOut.textContent = total;
+      }
+      animatedTotal = total;
+
+      sessionOut.textContent = sessionCount;
+
+      const r = pickReaction(total);
+      reactionText.textContent = r.text;
+      reactionAuthor.textContent = '— ' + r.author;
+
+      const s = computeStats();
+      $('stat-first').textContent = s.first;
+      $('stat-last').textContent = s.last;
+      $('stat-record').textContent = s.record;
+      $('stat-avg').textContent = s.avg;
+
+      // ticker — last 20
+      ticker.innerHTML = '';
+      if (!hits.length) {
+        const e = document.createElement('span');
+        e.className = 'empty-ticker';
+        e.textContent = 'Henüz kayıt yok. Butona bas, buraya düşer.';
+        ticker.appendChild(e);
+      } else {
+        hits.slice(0, 20).forEach((h, i) => {
+          const t = document.createElement('span');
+          t.className = 'tick' + (i === 0 && bump ? ' new' : '');
+          t.textContent = '#' + (total - i) + ' · ' + fmtDate(h.hit_at);
+          ticker.appendChild(t);
+        });
+      }
+
+      undoBtn.disabled = !lastDeleted && hits.length === 0;
+    }
+
+    // ---- supabase ops ----
+    const OFFLINE = SUPABASE_URL === 'YOUR_SUPABASE_URL' || !SUPABASE_URL;
+
+    async function loadAll() {
+      if (OFFLINE) {
+        setupWarning.classList.add('show');
+        setSync('err', 'Yerel mod');
+        // fallback to localStorage
+        try {
+          const stored = JSON.parse(localStorage.getItem('direkmatik_local_hits') || '[]');
+          hits = stored;
+        } catch { hits = []; }
+        render();
+        return;
+      }
+      setSync('busy', 'Yükleniyor');
+      try {
+        const { data, error } = await supabase
+          .from('direkmatik_hits')
+          .select('id, hit_at')
+          .eq('user_key', userKey)
+          .order('hit_at', { ascending: false })
+          .limit(5000);
+        if (error) throw error;
+        hits = data || [];
+        setSync('ok', 'Canlı · Supabase');
+        render();
+      } catch (e) {
+        console.error(e);
+        setSync('err', 'Bağlantı hatası');
+      }
+    }
+
+    async function addHit() {
+      const now = new Date().toISOString();
+      const optimistic = { id: 'temp_' + Date.now(), hit_at: now };
+      hits.unshift(optimistic);
+      sessionCount += 1;
+      render({ bump: true });
+
+      if (OFFLINE) {
+        localStorage.setItem('direkmatik_local_hits', JSON.stringify(hits));
+        return;
+      }
+
+      saveQueue = saveQueue.then(async () => {
+        setSync('busy', 'Kaydediliyor');
+        try {
+          const { data, error } = await supabase
+            .from('direkmatik_hits')
+            .insert({ user_key: userKey, hit_at: now })
+            .select('id, hit_at')
+            .single();
+          if (error) throw error;
+          // replace the optimistic record
+          const idx = hits.findIndex(h => h.id === optimistic.id);
+          if (idx !== -1) hits[idx] = data;
+          setSync('ok', 'Canlı · Supabase');
+        } catch (e) {
+          console.error(e);
+          setSync('err', 'Kayıt başarısız');
+        }
+      });
+    }
+
+    async function undoLast() {
+      if (!hits.length) return;
+      const last = hits[0];
+      hits.shift();
+      if (sessionCount > 0) sessionCount -= 1;
+      lastDeleted = last;
+      render();
+
+      if (OFFLINE) {
+        localStorage.setItem('direkmatik_local_hits', JSON.stringify(hits));
+        return;
+      }
+
+      if (String(last.id).startsWith('temp_')) return; // henüz kayıt olmamış
+
+      saveQueue = saveQueue.then(async () => {
+        setSync('busy', 'Geri alınıyor');
+        try {
+          const { error } = await supabase
+            .from('direkmatik_hits')
+            .delete()
+            .eq('id', last.id)
+            .eq('user_key', userKey);
+          if (error) throw error;
+          setSync('ok', 'Canlı · Supabase');
+        } catch (e) {
+          console.error(e);
+          setSync('err', 'Geri alma hatası');
+        }
+      });
+    }
+
+    async function resetAll() {
+      hits = [];
+      sessionCount = 0;
+      lastDeleted = null;
+      render();
+
+      if (OFFLINE) {
+        localStorage.removeItem('direkmatik_local_hits');
+        return;
+      }
+
+      saveQueue = saveQueue.then(async () => {
+        setSync('busy', 'Sıfırlanıyor');
+        try {
+          const { error } = await supabase
+            .from('direkmatik_hits')
+            .delete()
+            .eq('user_key', userKey);
+          if (error) throw error;
+          setSync('ok', 'Canlı · Supabase');
+        } catch (e) {
+          console.error(e);
+          setSync('err', 'Sıfırlama hatası');
+        }
+      });
+    }
+
+    // ---- events ----
+    hitBtn.addEventListener('click', (ev) => {
+      // ripple
+      const rect = hitBtn.getBoundingClientRect();
+      const r = document.createElement('span');
+      r.className = 'ripple';
+      const size = Math.max(rect.width, rect.height);
+      r.style.width = r.style.height = size + 'px';
+      r.style.left = (ev.clientX - rect.left - size / 2) + 'px';
+      r.style.top = (ev.clientY - rect.top - size / 2) + 'px';
+      hitBtn.appendChild(r);
+      setTimeout(() => r.remove(), 700);
+
+      addHit();
+    });
+
+    undoBtn.addEventListener('click', () => {
+      if (!hits.length) return;
+      undoLast();
+    });
+
+    let resetArmed = false;
+    let resetTimer = null;
+    resetBtn.addEventListener('click', () => {
+      if (!resetArmed) {
+        resetArmed = true;
+        resetBtn.textContent = 'Emin misin? Bas.';
+        resetBtn.classList.add('confirm');
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+          resetArmed = false;
+          resetBtn.textContent = 'Sıfırla';
+          resetBtn.classList.remove('confirm');
+        }, 3000);
+      } else {
+        clearTimeout(resetTimer);
+        resetArmed = false;
+        resetBtn.textContent = 'Sıfırla';
+        resetBtn.classList.remove('confirm');
+        resetAll();
+      }
+    });
+
+    // klavye kısayolu: boşluk = hit
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && document.activeElement === document.body) {
+        e.preventDefault();
+        hitBtn.click();
+      }
+    });
+
+    // ---- init ----
+    userKey = getUserKey();
+    if (!OFFLINE) {
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    loadAll();
+  </script>
+
+</body>
+</html>
