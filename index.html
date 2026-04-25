@@ -145,6 +145,11 @@
       border: 1px solid var(--line-strong);
       border-radius: 2px;
       font-size: 10px;
+      max-width: 360px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: help;
     }
 
     .sync-dot {
@@ -710,8 +715,8 @@ create policy "anyone delete own"
     /* =========================================================
        CONFIG — burayı kendi Supabase bilgilerinle doldur
        ========================================================= */
-    const SUPABASE_URL = 'https://qhpsirahlcfbjwsweztf.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFocHNpcmFobGNmYmp3c3dlenRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MDQ5MDEsImV4cCI6MjA4OTI4MDkwMX0.DQzQowQKQppXkZHtZdhrTQwwbl7h9KLR04fuW2Qjo1w';
+    const SUPABASE_URL = 'https://dxzjgnwrkeyhxjahoszj.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_3I2C3tzX-fDUZzsVriNlTQ_NVY5yJXe';
     /* ========================================================= */
 
     // ---- state ----
@@ -907,8 +912,10 @@ create policy "anyone delete own"
         setSync('ok', 'Canlı · Supabase');
         render();
       } catch (e) {
-        console.error(e);
-        setSync('err', 'Bağlantı hatası');
+        console.error('Supabase load error:', e);
+        const msg = (e.message || e.error_description || JSON.stringify(e)).slice(0, 80);
+        setSync('err', 'YÜKLEME: ' + msg);
+        syncPill.title = JSON.stringify(e, null, 2);
       }
     }
 
@@ -938,8 +945,10 @@ create policy "anyone delete own"
           if (idx !== -1) hits[idx] = data;
           setSync('ok', 'Canlı · Supabase');
         } catch (e) {
-          console.error(e);
-          setSync('err', 'Kayıt başarısız');
+          console.error('Supabase insert error:', e);
+          const msg = (e.message || e.error_description || JSON.stringify(e)).slice(0, 80);
+          setSync('err', 'HATA: ' + msg);
+          syncPill.title = JSON.stringify(e, null, 2);
         }
       });
     }
