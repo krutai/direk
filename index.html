@@ -24,8 +24,24 @@
       --gold:     rgba(212,175,55,.9);
     }
     html,body{background:var(--bg);color:var(--cream);font-family:'IBM Plex Mono','Courier New',monospace;font-size:15px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
-    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(to right,var(--line) 1px,transparent 1px),linear-gradient(to bottom,var(--line) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;opacity:.4;z-index:0;}
-    body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(244,185,66,.05),transparent 55%),radial-gradient(ellipse at 50% 100%,rgba(74,143,92,.07),transparent 55%);pointer-events:none;z-index:0;}
+
+    /* ── FOOTBALL PITCH BACKGROUND ── */
+    .pitch-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    .pitch-bg svg{width:100%;height:100%;opacity:.065;}
+
+    /* dark overlay over pitch */
+    .pitch-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(10,16,12,.55) 0%, rgba(10,16,12,.92) 70%),
+        linear-gradient(to bottom, rgba(10,16,12,.7) 0%, rgba(10,16,12,.4) 50%, rgba(10,16,12,.7) 100%);
+    }
+
+    /* QUOTE CARD */
+    .quote-card{background:rgba(17,24,17,.7);border:1px solid var(--line-s);border-left:3px solid var(--amber);padding:20px 24px;margin-bottom:44px;display:flex;align-items:flex-start;gap:16px;backdrop-filter:blur(4px);}
+    .quote-icon{font-size:28px;line-height:1;flex-shrink:0;margin-top:2px;opacity:.8;}
+    .quote-body{}
+    .quote-text{font-family:'EB Garamond',Georgia,serif;font-style:italic;font-size:18px;line-height:1.5;color:var(--cream);margin-bottom:6px;}
+    .quote-author{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--amber);}
 
     .wrap{position:relative;z-index:2;max-width:1060px;margin:0 auto;padding:28px 20px 100px;}
 
@@ -149,6 +165,54 @@
   </style>
 </head>
 <body>
+
+<!-- FOOTBALL PITCH BACKGROUND -->
+<div class="pitch-bg" aria-hidden="true">
+  <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#4A8F5C" stroke-width="2.5">
+    <!-- grass stripes -->
+    <rect width="1200" height="800" fill="#0d1f10" stroke="none"/>
+    <rect x="0"   width="100" height="800" fill="#0f2212" stroke="none"/>
+    <rect x="200" width="100" height="800" fill="#0f2212" stroke="none"/>
+    <rect x="400" width="100" height="800" fill="#0f2212" stroke="none"/>
+    <rect x="600" width="100" height="800" fill="#0f2212" stroke="none"/>
+    <rect x="800" width="100" height="800" fill="#0f2212" stroke="none"/>
+    <rect x="1000" width="100" height="800" fill="#0f2212" stroke="none"/>
+    <!-- outer boundary -->
+    <rect x="40" y="30" width="1120" height="740" stroke-width="3"/>
+    <!-- halfway line -->
+    <line x1="600" y1="30" x2="600" y2="770"/>
+    <!-- centre circle -->
+    <circle cx="600" cy="400" r="90"/>
+    <circle cx="600" cy="400" r="4" fill="#4A8F5C" stroke="none"/>
+    <!-- left penalty area -->
+    <rect x="40" y="215" width="165" height="370"/>
+    <!-- left goal area -->
+    <rect x="40" y="315" width="55" height="170"/>
+    <!-- left goal -->
+    <rect x="18" y="340" width="22" height="120" stroke-width="2"/>
+    <!-- left penalty spot -->
+    <circle cx="151" cy="400" r="4" fill="#4A8F5C" stroke="none"/>
+    <!-- left penalty arc -->
+    <path d="M 165 330 A 90 90 0 0 1 165 470" stroke-dasharray="8 4"/>
+    <!-- right penalty area -->
+    <rect x="995" y="215" width="165" height="370"/>
+    <!-- right goal area -->
+    <rect x="1105" y="315" width="55" height="170"/>
+    <!-- right goal -->
+    <rect x="1160" y="340" width="22" height="120" stroke-width="2"/>
+    <!-- right penalty spot -->
+    <circle cx="1049" cy="400" r="4" fill="#4A8F5C" stroke="none"/>
+    <!-- right penalty arc -->
+    <path d="M 1035 330 A 90 90 0 0 0 1035 470" stroke-dasharray="8 4"/>
+    <!-- corner arcs -->
+    <path d="M 40 50 A 20 20 0 0 1 60 30"/>
+    <path d="M 1140 30 A 20 20 0 0 1 1160 50"/>
+    <path d="M 40 750 A 20 20 0 0 0 60 770"/>
+    <path d="M 1140 770 A 20 20 0 0 0 1160 750"/>
+  </svg>
+</div>
+<div class="pitch-overlay" aria-hidden="true"></div>
+
 <div class="wrap">
 
   <!-- HEADER -->
@@ -172,6 +236,15 @@
       </span>
     </div>
   </header>
+
+  <!-- GÜNÜN SÖZÜ -->
+  <div class="quote-card" id="quote-card">
+    <div class="quote-icon">⚽</div>
+    <div class="quote-body">
+      <div class="quote-text" id="quote-text">Yükleniyor…</div>
+      <div class="quote-author" id="quote-author">—</div>
+    </div>
+  </div>
 
   <!-- STATS -->
   <div class="sec-hd"><h2>İstatistikler</h2><span>Genel</span></div>
@@ -294,15 +367,69 @@ function applyAdmin(){
   renderPGrid(); renderHitBtn();
 }
 
+/* ── DAILY QUOTES ── */
+const QUOTES=[
+  {t:'Futbol hayattaki her şey gibidir — nasıl oynadığınla ilgili.',a:'Johan Cruyff'},
+  {t:'Bazı insanlar futbolun ölüm kalım meselesi olduğunu düşünür. Sizi temin ederim, çok daha ciddî bir şey.',a:'Bill Shankly'},
+  {t:'Bir gol attıktan sonra sarılmak için herkese sarılıyorsunuz. Fakat bir gol kaçırınca herkes sizi terk ediyor.',a:'Pelé'},
+  {t:'Futbol basit bir oyundur. İnsanlar onu karmaşık hale getirir.',a:'Johan Cruyff'},
+  {t:'Topa sahip olmak önemli değil; olmanız gereken yerde olmak önemli.',a:'Johan Cruyff'},
+  {t:'Her şampiyonun içinde bir şüphe tohumları vardır. Onu yok sayan kazanır.',a:'Zinedine Zidane'},
+  {t:'Futbolda on bir rakamı yoktur; sadece bir takım vardır.',a:'Herbert Chapman'},
+  {t:'Bir maçı kazanmak için sahadaki on bir oyuncunun on birinin de oynaması gerekir.',a:'Arrigo Sacchi'},
+  {t:'Şampiyonluk bir anlık değil, aylık, yıllık çalışmanın ürünüdür.',a:'Mia Hamm'},
+  {t:'Eğer kazanmazsanız, kaybedeceğinizi de unutmayın.',a:'Johan Cruyff'},
+  {t:'Futbol düşünce hızında oynanır. Ayaklarınız yetişmeyebilir ama aklınız yetişebilir.',a:'Johan Cruyff'},
+  {t:'Başarı, hazırlık fırsatla buluştuğunda ortaya çıkar.',a:'Bobby Charlton'},
+  {t:'Büyük oyuncular pozisyonu değil, topu alır.',a:'Zinedine Zidane'},
+  {t:'Sahada kötü bir gün bile, ofiste iyi bir günden iyidir.',a:'Unknown'},
+  {t:'Futbol; kalp atışlarıyla, coşkuyla ve tutku ile oynanır.',a:'Pelé'},
+  {t:'Baskı mı? Baskı, futbol oynamamak demektir.',a:'José Mourinho'},
+  {t:'İyi bir savunma güzel oyunun temelidir.',a:'Fabio Capello'},
+  {t:'Futbol bir takım sporudur. Bireyler maçları, takımlar şampiyonaları kazanır.',a:'Zlatan Ibrahimović'},
+  {t:'Eğer düşmanlara karşı güçlü olamazsanız, onları yenmek de anlamsız kalır.',a:'Alex Ferguson'},
+  {t:'Antrenman sizi daha iyi yapar; tutku sizi daha büyük yapar.',a:'Ronaldinho'},
+  {t:'Hayatta iki şey vardır: kazanmak ve kaybetmeyi öğrenmek.',a:'Didier Deschamps'},
+  {t:'Topu kaybetme. Sahada kalınabilmenin tek yolu topu elinde tutmaktır.',a:'Johan Cruyff'},
+  {t:'Büyük oyuncular kendileri için değil, takımları için oynar.',a:'Sócrates'},
+  {t:'Hiçbir taktik, kaliteli oyuncuların yerini tutamaz.',a:'José Mourinho'},
+  {t:'Yorulduğunuzda koşun; yorgunluğu hissettirmeyin.',a:'Cristiano Ronaldo'},
+  {t:'Futbol bir çember gibidir — sonu başlangıcına bağlıdır.',a:'Johan Cruyff'},
+  {t:'Sahada ne düşünürsek onu yaşarız.',a:'Zinedine Zidane'},
+  {t:'Cesaret, korku hissetmemek değil; korkuya rağmen devam etmektir.',a:'Bobby Robson'},
+  {t:'Bir maçın sonucu asla garanti değildir; bu yüzden son düdüğe kadar oynarsınız.',a:'Pelé'},
+  {t:'Tutku olmadan yetenek sadece potansiyel kalır.',a:'Roy Keane'},
+];
+
+function setDailyQuote(){
+  const now=new Date();
+  const doy=Math.floor((now-(new Date(now.getFullYear(),0,0)))/864e5);
+  const q=QUOTES[doy%QUOTES.length];
+  document.getElementById('quote-text').textContent='"'+q.t+'"';
+  document.getElementById('quote-author').textContent='— '+q.a;
+}
+
 /* ── REACTIONS ── */
 const RX=[
-  {min:0,max:0,t:'Henüz direk yok. Maçlar temiz gidiyor.'},
-  {min:1,max:4,t:'Şans döner, direk olmayan maçlar gelecek.'},
-  {min:5,max:12,t:'Direk koleksiyonu büyüyor yavaş yavaş.'},
-  {min:13,max:24,t:'Direk fabrikası tam gaz çalışıyor.'},
-  {min:25,max:49,t:'EA Sports bu kadro için özel ayar yapmış.'},
-  {min:50,max:99,t:'Rekorlar kırılıyor, demirler çınlıyor.'},
-  {min:100,max:Infinity,t:'Efsane seviye. Direkmatik seninle gurur duyuyor.'},
+  {min:0,  max:0,  t:'Henüz direk yok. Saha temiz, kaleci mutsuz.'},
+  {min:1,  max:1,  t:'İlk direk. Her efsanenin bir başlangıcı vardır.'},
+  {min:2,  max:3,  t:'Şans döner. Cruyff öyle demiş.'},
+  {min:4,  max:6,  t:'Direkler toplanıyor. Koleksiyon başlıyor.'},
+  {min:7,  max:10, t:'Kaleci arkada gülümsüyor, direk seviyor sizi.'},
+  {min:11, max:15, t:'EA Sports sizin için özel bir algoritma yazmış.'},
+  {min:16, max:20, t:'Direğe vurmak artık bir sanat formuna dönüştü.'},
+  {min:21, max:27, t:'Penaltı atışlarında direğe güvenilir adres sensin.'},
+  {min:28, max:35, t:'Direkmatik bu sayıyı görünce ağladı, itiraf edelim.'},
+  {min:36, max:45, t:'Demir, tahta, boru — hepsini tanıyorsun artık.'},
+  {min:46, max:55, t:'Yarım yüzün üzerinde direk. Bu bir rekor mu?'},
+  {min:56, max:70, t:'Shankly "hayat memat meselesi" demişti. Bu daha ciddi.'},
+  {min:71, max:85, t:'Direk sesi artık bir ninniye dönmüş olmalı.'},
+  {min:86, max:99, t:'Doksanların üzeri. Üç haneli felakete hoş geldin.'},
+  {min:100,max:124,t:'Yüzü geçtik. Cruyff mezarında huzurla yatamıyor.'},
+  {min:125,max:149,t:'125+ direk. Direk üreticisi şirkete sponsorluk teklifi gönderildi.'},
+  {min:150,max:199,t:'Yarım asrın üzeri — direkte değil, daha fazlasında…'},
+  {min:200,max:249,t:'200 direk. FIFA size özel "Demir Adam" unvanı verdi.'},
+  {min:250,max:Infinity,t:'250+. Bu artık oyun değil, felsefi bir yolculuk.'},
 ];
 const rx = n=>RX.find(r=>n>=r.min&&n<=r.max)||RX[0];
 
@@ -570,6 +697,7 @@ mOk.addEventListener('click',tryUnlock);
 pwdInput.addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock();});
 
 /* ── INIT ── */
+setDailyQuote();
 applyAdmin();
 loadAll();
 </script>
