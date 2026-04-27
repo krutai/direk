@@ -73,7 +73,7 @@
     .lb-empty{text-align:center;padding:48px;font-family:'EB Garamond',Georgia,serif;font-style:italic;color:var(--dim);font-size:16px;}
 
     /* STATS */
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line-s);border:1px solid var(--line-s);margin-bottom:52px;}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line-s);border:1px solid var(--line-s);margin-bottom:52px;}
     .stat{background:var(--bg);padding:20px 18px;}
     .stat-lbl{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
     .stat-val{font-family:'Anton','Impact',sans-serif;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;}
@@ -173,18 +173,22 @@
     </div>
   </header>
 
-  <!-- LEADERBOARD -->
-  <div class="sec-hd"><h2>Sıralama</h2><span id="lb-sub">Canlı · Supabase</span></div>
-  <div class="leaderboard" id="lb"></div>
-
   <!-- STATS -->
-  <div class="sec-hd" style="margin-top:52px;"><h2>İstatistikler</h2><span>Genel</span></div>
+  <div class="sec-hd"><h2>İstatistikler</h2><span>Genel</span></div>
   <section class="stats">
-    <div class="stat"><div class="stat-lbl">Toplam direk</div><div class="stat-val" id="s-total">—</div><div class="stat-sub">Herkesinkiler</div></div>
-    <div class="stat"><div class="stat-lbl">İlk direk</div><div class="stat-val sm" id="s-first">—</div><div class="stat-sub">Serüvenin başı</div></div>
-    <div class="stat"><div class="stat-lbl">Son direk</div><div class="stat-val sm" id="s-last">—</div><div class="stat-sub">En taze acı</div></div>
+    <div class="stat"><div class="stat-lbl">Toplam direk</div><div class="stat-val" id="s-total">—</div><div class="stat-sub">Tüm zamanlar</div></div>
+    <div class="stat"><div class="stat-lbl">Bugün</div><div class="stat-val" id="s-today">—</div><div class="stat-sub">Bugünkü toplam</div></div>
+    <div class="stat"><div class="stat-lbl">Bu hafta</div><div class="stat-val" id="s-week">—</div><div class="stat-sub">Son 7 gün</div></div>
+    <div class="stat"><div class="stat-lbl">Günlük rekor</div><div class="stat-val" id="s-record">—</div><div class="stat-sub" id="s-record-day">Tek günde en fazla</div></div>
     <div class="stat"><div class="stat-lbl">Günlük ort.</div><div class="stat-val" id="s-avg">—</div><div class="stat-sub">Aktif günler üzerinden</div></div>
+    <div class="stat"><div class="stat-lbl">En çok vuran</div><div class="stat-val sm" id="s-top">—</div><div class="stat-sub" id="s-top-n">Lider oyuncu</div></div>
+    <div class="stat"><div class="stat-lbl">İlk direk</div><div class="stat-val sm" id="s-first">—</div><div class="stat-sub" id="s-first-who">Serüvenin başı</div></div>
+    <div class="stat"><div class="stat-lbl">Son direk</div><div class="stat-val sm" id="s-last">—</div><div class="stat-sub" id="s-last-who">En taze acı</div></div>
   </section>
+
+  <!-- LEADERBOARD -->
+  <div class="sec-hd" style="margin-top:52px;"><h2>Sıralama</h2><span id="lb-sub">Canlı · Supabase</span></div>
+  <div class="leaderboard" id="lb"></div>
 
   <!-- TICKER -->
   <div class="ticker-wrap">
@@ -259,7 +263,11 @@ const $      = id => document.getElementById(id);
 const datePill=$('date-pill'), lockBtn=$('lock-btn'), lockTxt=$('lock-txt');
 const syncPill=$('sync-pill'), syncTxt=$('sync-txt');
 const lbEl=$('lb');
-const sTot=$('s-total'), sFirst=$('s-first'), sLast=$('s-last'), sAvg=$('s-avg');
+const sTot=$('s-total'), sToday=$('s-today'), sWeek=$('s-week');
+const sRecord=$('s-record'), sRecordDay=$('s-record-day');
+const sAvg=$('s-avg'), sTop=$('s-top'), sTopN=$('s-top-n');
+const sFirst=$('s-first'), sFirstWho=$('s-first-who');
+const sLast=$('s-last'),  sLastWho=$('s-last-who');
 const tickerEl=$('ticker');
 const pgrid=$('pgrid'), noSel=$('no-sel');
 const hitBtn=$('hit-btn'), hitTxt=$('hit-txt');
@@ -343,13 +351,48 @@ function renderLB(){
 
 /* ── RENDER STATS ── */
 function renderStats(){
-  sTot.textContent=hits.length;
-  if(!hits.length){sFirst.textContent=sLast.textContent=sAvg.textContent='—';return;}
-  sFirst.textContent=fmtSh(hits[hits.length-1].hit_at);
-  sLast.textContent=fmt(hits[0].hit_at);
-  const days={};
-  hits.forEach(h=>{const d=h.hit_at.slice(0,10);days[d]=(days[d]||0)+1;});
-  sAvg.textContent=Math.round((hits.length/Object.keys(days).length)*10)/10;
+  const total=hits.length;
+  sTot.textContent=total;
+
+  if(!total){
+    [sToday,sWeek,sRecord,sAvg,sTop,sFirst,sLast].forEach(el=>el.textContent='—');
+    sRecordDay.textContent='Tek günde en fazla';
+    sTopN.textContent='Lider oyuncu';
+    sFirstWho.textContent='Serüvenin başı';
+    sLastWho.textContent='En taze acı';
+    return;
+  }
+
+  const todayStr = new Date().toISOString().slice(0,10);
+  const weekAgo  = new Date(Date.now()-7*864e5).toISOString();
+
+  sToday.textContent = hits.filter(h=>h.hit_at.slice(0,10)===todayStr).length;
+  sWeek.textContent  = hits.filter(h=>h.hit_at>=weekAgo).length;
+
+  // daily counts
+  const byDay={};
+  hits.forEach(h=>{const d=h.hit_at.slice(0,10);byDay[d]=(byDay[d]||0)+1;});
+  const dayEntries=Object.entries(byDay);
+  const [recDay,recN]=dayEntries.sort((a,b)=>b[1]-a[1])[0];
+  sRecord.textContent=recN;
+  sRecordDay.textContent=new Date(recDay).toLocaleDateString('tr-TR',{day:'2-digit',month:'short',year:'numeric'});
+  sAvg.textContent=Math.round((total/dayEntries.length)*10)/10;
+
+  // top player
+  const counts={};
+  PLAYERS.forEach(p=>counts[p]=0);
+  hits.forEach(h=>counts[h.player]=(counts[h.player]||0)+1);
+  const topPlayer=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  sTop.textContent=topPlayer[0];
+  sTopN.textContent=topPlayer[1]+' direk ile lider';
+
+  // first & last
+  const oldest=hits[hits.length-1];
+  const newest=hits[0];
+  sFirst.textContent=fmtSh(oldest.hit_at);
+  sFirstWho.textContent=oldest.player+' vurdu';
+  sLast.textContent=fmt(newest.hit_at);
+  sLastWho.textContent=newest.player+' vurdu';
 }
 
 /* ── RENDER TICKER ── */
